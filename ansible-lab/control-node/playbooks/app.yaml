@@ -77,24 +77,29 @@
       become: yes
 
     - name: Registrar versão atual do pacote
-      shell: 
-        cmd: "/opt/apache-maven-3.1.0/bin/mvn org.apache.maven.plugins:maven-help-plugin:2.5.5:evaluate -Dexpression=project.version | grep -v '\\[)'"
+      command: "/opt/apache-maven-3.1.0/bin/mvn -q org.apache.maven.plugins:maven-help-plugin:2.5.5:evaluate -Dexpression=project.version | grep -v '\\[)'"
+      args:
         chdir: /opt/notes
       register: app_version
+      changed_when: false
+
+    - name: Debug app_version
+      debug:
+        var: app_version.stdout
 
     - name: Configurar serviço do Systemd
       template:
        src: etc/systemd/system/notes.service
        dest: /etc/systemd/system/notes.service
       vars:
-        app_version: "{{ app_version.stdout }}"
+        app_version: "{{ app_version.stdout }}" 
       notify: reload daemon
 
     - name: Iniciar serviço notes
       service:
         name: notes
         state: restarted
-
+    
   roles:
     - configuracao-default-so
   handlers:
